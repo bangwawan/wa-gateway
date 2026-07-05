@@ -1,0 +1,40 @@
+{
+  "name": "wa-gateway",
+  "version": "1.0.0",
+  "description": "WhatsApp Gateway REST API + WebSocket berbasis whatsapp-web.js",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "worker": "node src/workers/messageWorker.js",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "lint": "eslint src/**/*.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "bcryptjs": "^2.4.3",
+    "bull": "^4.12.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.7.5",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^10.0.0",
+    "whatsapp-web.js": "^1.23.0",
+    "winston": "^3.13.0",
+    "yaml": "^2.4.5"
+  },
+  "devDependencies": {
+    "eslint": "^9.5.0",
+    "nodemon": "^3.1.4",
+    "prisma": "^5.14.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

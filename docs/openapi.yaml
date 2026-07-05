@@ -1,0 +1,616 @@
+openapi: 3.0.3
+info:
+  title: WhatsApp Gateway API
+  description: |
+    REST API untuk WhatsApp Gateway berbasis whatsapp-web.js.
+    
+    ## Autentikasi
+    - **JWT Token**: Gunakan `Authorization: Bearer <token>` pada header.
+    - **API Key**: Gunakan `x-api-key: <key>` pada header (untuk endpoint pengiriman pesan).
+    
+    ## Alur Penggunaan
+    1. Register user baru → `/auth/register`
+    2. Login → `/auth/login` (dapatkan token)
+    3. Scan QR WhatsApp → GET `/auth/qr`
+    4. Kirim pesan → POST `/messages`
+  version: 1.0.0
+  contact:
+    name: WhatsApp Gateway Support
+    
+servers:
+  - url: http://localhost:3000
+    description: Local Development
+
+tags:
+  - name: Auth
+    description: Autentikasi & WhatsApp session
+  - name: Messages
+    description: Kirim & kelola pesan
+  - name: Reports
+    description: Laporan & statistik
+  - name: Status
+    description: Health check
+
+# ─── Security Schemes ──────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+
+  schemas:
+    # ─── Response Wrappers ──────────────────────────────────────────────
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+
+    # ─── Models ─────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [ADMIN, USER]
+        apiKey:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        direction:
+          type: string
+          enum: [IN, OUT]
+        from:
+          type: string
+          example: "628123456789"
+        to:
+          type: string
+          example: "628987654321"
+        type:
+          type: string
+          enum: [TEXT, IMAGE, DOCUMENT, AUDIO, VIDEO, STICKER]
+        content:
+          type: string
+          nullable: true
+        mediaUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, QUEUED, SENDING, SENT, DELIVERED, READ, FAILED]
+        waMessageId:
+          type: string
+          nullable: true
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+# ─── Paths ─────────────────────────────────────────────────────────────────
+paths:
+  # ── Auth ────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrasi user baru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Admin Utama
+                email:
+                  type: string
+                  format: email
+                  example: admin@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: password123
+                role:
+                  type: string
+                  enum: [ADMIN, USER]
+                  default: USER
+      responses:
+        '201':
+          description: Registrasi berhasil
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '409':
+          description: Email sudah terdaftar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login dan dapatkan JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: admin@example.com
+                password:
+                  type: string
+                  example: password123
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      apiKey:
+                        type: string
+                      role:
+                        type: string
+                      expiresIn:
+                        type: string
+        '401':
+          description: Kredensial tidak valid
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Profil user yang sedang login
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Data profil user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+
+  /auth/qr:
+    get:
+      tags: [Auth]
+      summary: Ambil QR Code untuk scan WhatsApp (Admin only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: QR Code dalam format data URL atau status connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status:
+                    type: string
+                    enum: [DISCONNECTED, QR_READY, CONNECTED, RECONNECTING]
+                  qrDataUrl:
+                    type: string
+                    description: Base64 PNG QR code (ada hanya bila status=QR_READY)
+
+  /auth/wa-status:
+    get:
+      tags: [Auth]
+      summary: Status koneksi WhatsApp
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Status WhatsApp
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                      phone:
+                        type: string
+                        nullable: true
+
+  # ── Messages ─────────────────────────────────────────────────────────────
+  /messages:
+    post:
+      tags: [Messages]
+      summary: Kirim pesan teks atau media
+      description: |
+        Mendukung dua metode autentikasi: JWT Bearer Token atau API Key (`x-api-key`).
+        
+        Untuk pesan teks gunakan `application/json`.
+        Untuk media (gambar/dokumen) gunakan `multipart/form-data`.
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, content]
+              properties:
+                to:
+                  type: string
+                  description: Nomor WA tujuan (format E.164 tanpa +)
+                  example: "628123456789"
+                content:
+                  type: string
+                  example: Halo, ini pesan dari API!
+          multipart/form-data:
+            schema:
+              type: object
+              required: [to, media]
+              properties:
+                to:
+                  type: string
+                  example: "628123456789"
+                caption:
+                  type: string
+                  example: Ini caption gambar
+                media:
+                  type: string
+                  format: binary
+      responses:
+        '202':
+          description: Pesan diterima dan masuk antrian
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      messageId:
+                        type: string
+                      status:
+                        type: string
+                        example: PENDING
+        '400':
+          description: Validasi input gagal
+        '503':
+          description: WhatsApp belum terhubung
+
+    get:
+      tags: [Messages]
+      summary: List semua pesan dengan filter
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: direction
+          schema:
+            type: string
+            enum: [IN, OUT]
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, QUEUED, SENDING, SENT, DELIVERED, READ, FAILED]
+        - in: query
+          name: from
+          schema:
+            type: string
+        - in: query
+          name: to
+          schema:
+            type: string
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Daftar pesan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /messages/{id}:
+    get:
+      tags: [Messages]
+      summary: Detail pesan berdasarkan ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detail pesan
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Message'
+        '404':
+          description: Pesan tidak ditemukan
+
+    delete:
+      tags: [Messages]
+      summary: Hapus pesan (hanya pesan yang sudah selesai/gagal)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pesan berhasil dihapus
+        '400':
+          description: Pesan sedang diproses
+        '404':
+          description: Pesan tidak ditemukan
+
+  # ── Reports ──────────────────────────────────────────────────────────────
+  /reports/summary:
+    get:
+      tags: [Reports]
+      summary: Ringkasan statistik pesan
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Statistik pesan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      byStatus:
+                        type: object
+                      byDirection:
+                        type: object
+                      byType:
+                        type: object
+
+  /reports/daily:
+    get:
+      tags: [Reports]
+      summary: Data pesan per hari (untuk grafik)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            default: 7
+            description: Jumlah hari ke belakang
+      responses:
+        '200':
+          description: Data harian
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        total:
+                          type: integer
+                        IN:
+                          type: integer
+                        OUT:
+                          type: integer
+                        FAILED:
+                          type: integer
+
+  /reports/failed:
+    get:
+      tags: [Reports]
+      summary: Daftar pesan yang gagal
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Pesan gagal
+
+  # ── Status ────────────────────────────────────────────────────────────────
+  /status:
+    get:
+      tags: [Status]
+      summary: Health check server
+      responses:
+        '200':
+          description: Status server
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      server:
+                        type: string
+                        example: ok
+                      uptime:
+                        type: number
+                      timestamp:
+                        type: string
+                        format: date-time
+                      database:
+                        type: string
+                        enum: [ok, error]
+                      whatsapp:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          phone:
+                            type: string
+                            nullable: true

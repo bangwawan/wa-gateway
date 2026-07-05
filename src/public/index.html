@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WA Gateway Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════════════════════ RESET */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ TOKENS */
+    :root {
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --bg3: #1c2330;
+      --border: rgba(255, 255, 255, 0.08);
+      --glass: rgba(255, 255, 255, 0.04);
+      --green: #25d366;
+      --green-d: #128c4e;
+      --green-glow: rgba(37, 211, 102, 0.25);
+      --red: #ff4757;
+      --yellow: #ffa502;
+      --blue: #3ecfff;
+      --text: #e6edf3;
+      --text2: #8b949e;
+      --radius: 14px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      --transition: 0.25s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* ═══════════════════════════════════════════════════════════ BASE */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background mesh */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 10% 20%, rgba(37, 211, 102, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 90% 80%, rgba(62, 207, 255, 0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ LOGIN */
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      animation: fadeIn .4s ease;
+    }
+
+    #login-screen.hidden {
+      display: none;
+    }
+
+    .login-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow), 0 0 0 1px rgba(37, 211, 102, 0.1);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .login-logo .icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--green), var(--green-d));
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 0 30px var(--green-glow);
+      margin-bottom: 12px;
+    }
+
+    .login-logo h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .login-logo p {
+      color: var(--text2);
+      font-size: .85rem;
+      margin-top: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .form-group input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: .95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .form-group input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-glow);
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--green), var(--green-d));
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      color: #fff;
+      font-size: .95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 4px 20px var(--green-glow);
+    }
+
+    .btn:hover {
+      opacity: .9;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px var(--green-glow);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #login-error {
+      color: var(--red);
+      font-size: .85rem;
+      text-align: center;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    #login-error.show {
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ LAYOUT */
+    #app {
+      display: flex;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    #app.hidden {
+      display: none;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo .s-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--green), var(--green-d));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 16px var(--green-glow);
+    }
+
+    .sidebar-logo span {
+      font-size: .95rem;
+      font-weight: 700;
+    }
+
+    .nav {
+      flex: 1;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: var(--text2);
+      font-size: .875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--glass);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: rgba(37, 211, 102, 0.12);
+      color: var(--green);
+      border-color: rgba(37, 211, 102, 0.2);
+    }
+
+    .nav-item .nav-icon {
+      font-size: 1.1em;
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--glass);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+
+    .user-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .user-info .name {
+      font-size: .8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-info .role {
+      font-size: .7rem;
+      color: var(--green);
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 1rem;
+      transition: color var(--transition);
+      padding: 4px;
+    }
+
+    .logout-btn:hover {
+      color: var(--red);
+    }
+
+    /* ── Main Content ── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn .3s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════ PAGE HEADER */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      color: var(--text2);
+      font-size: .875rem;
+      margin-top: 4px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ CARDS */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ═══════════════════════════════════════════════════════════ STATS ROW */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent, var(--green));
+    }
+
+    .stat-card .s-label {
+      font-size: .75rem;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 500;
+    }
+
+    .stat-card .s-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 8px 0 4px;
+      line-height: 1;
+    }
+
+    .stat-card .s-sub {
+      font-size: .75rem;
+      color: var(--text2);
+    }
+
+    .stat-card .s-icon {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      font-size: 1.5rem;
+      opacity: 0.2;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ STATUS PAGE */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .wa-status-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      text-align: center;
+    }
+
+    .wa-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 100px;
+      font-size: .875rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .wa-status-badge.connected {
+      background: rgba(37, 211, 102, 0.12);
+      color: var(--green);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+    }
+
+    .wa-status-badge.qr {
+      background: rgba(255, 165, 2, 0.12);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 165, 2, 0.3);
+    }
+
+    .wa-status-badge.disconnected {
+      background: rgba(255, 71, 87, 0.12);
+      color: var(--red);
+      border: 1px solid rgba(255, 71, 87, 0.3);
+    }
+
+    .wa-status-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .4;
+      }
+    }
+
+    .wa-phone {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 6px;
+    }
+
+    .wa-phone-sub {
+      font-size: .8rem;
+      color: var(--text2);
+    }
+
+    /* QR Box */
+    .qr-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      text-align: center;
+    }
+
+    .qr-panel h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .qr-panel p {
+      font-size: .8rem;
+      color: var(--text2);
+      margin-bottom: 20px;
+    }
+
+    #qr-image {
+      width: 200px;
+      height: 200px;
+      border-radius: 12px;
+      background: white;
+      padding: 8px;
+      display: none;
+    }
+
+    #qr-placeholder {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text2);
+      font-size: .8rem;
+    }
+
+    #qr-placeholder .qr-spin {
+      font-size: 2rem;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #qr-connected {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+      background: rgba(37, 211, 102, 0.08);
+      border: 2px solid rgba(37, 211, 102, 0.3);
+      border-radius: 12px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--green);
+    }
+
+    #qr-connected .check {
+      font-size: 3rem;
+    }
+
+    .refresh-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: var(--text2);
+      font-size: .8rem;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: 14px;
+      transition: all var(--transition);
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* Log panel */
+    .log-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .log-header h3 {
+      font-size: .9rem;
+      font-weight: 600;
+    }
+
+    .clear-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      color: var(--text2);
+      font-size: .75rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .clear-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    #event-log {
+      height: 200px;
+      overflow-y: auto;
+      padding: 12px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: .78rem;
+    }
+
+    .log-item {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-item .log-time {
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .log-item .log-type {
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .log-item.info .log-type {
+      color: var(--blue);
+    }
+
+    .log-item.success .log-type {
+      color: var(--green);
+    }
+
+    .log-item.warn .log-type {
+      color: var(--yellow);
+    }
+
+    .log-item.error .log-type {
+      color: var(--red);
+    }
+
+    /* ═══════════════════════════════════════════════════════════ MESSAGES PAGE */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar select,
+    .toolbar input[type="text"],
+    .toolbar input[type="date"] {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: var(--text);
+      font-size: .85rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .toolbar select:focus,
+    .toolbar input:focus {
+      border-color: var(--green);
+    }
+
+    .toolbar .spacer {
+      flex: 1;
+    }
+
+    .btn-sm {
+      background: linear-gradient(135deg, var(--green), var(--green-d));
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      color: #fff;
+      font-size: .85rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity var(--transition);
+      box-shadow: 0 2px 12px var(--green-glow);
+    }
+
+    .btn-sm:hover {
+      opacity: .85;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 13px 16px;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+    }
+
+    tbody tr {
+      transition: background var(--transition);
+    }
+
+    tbody tr:hover {
+      background: var(--glass);
+    }
+
+    tbody td {
+      padding: 13px 16px;
+      font-size: .85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .badge-sent {
+      background: rgba(37, 211, 102, 0.12);
+      color: var(--green);
+    }
+
+    .badge-delivered {
+      background: rgba(62, 207, 255, 0.12);
+      color: var(--blue);
+    }
+
+    .badge-read {
+      background: rgba(62, 207, 255, 0.2);
+      color: #7ee8ff;
+    }
+
+    .badge-pending {
+      background: rgba(255, 165, 2, 0.12);
+      color: var(--yellow);
+    }
+
+    .badge-failed {
+      background: rgba(255, 71, 87, 0.12);
+      color: var(--red);
+    }
+
+    .badge-in {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+    }
+
+    .dir-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: .7rem;
+      font-weight: 700;
+    }
+
+    .dir-in {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+    }
+
+    .dir-out {
+      background: rgba(37, 211, 102, 0.15);
+      color: var(--green);
+    }
+
+    .truncate {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text2);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      opacity: .4;
+    }
+
+    .empty-state p {
+      font-size: .875rem;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      font-size: .8rem;
+      color: var(--text2);
+    }
+
+    .page-btns {
+      display: flex;
+      gap: 6px;
+    }
+
+    .page-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      color: var(--text2);
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .page-btn:hover,
+    .page-btn.active {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .page-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    /* ═══════════════════════════════════════════════════════════ REPORTS */
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .mini-table {
+      width: 100%;
+    }
+
+    .mini-table td {
+      padding: 8px 0;
+      font-size: .85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .mini-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+    }
+
+    /* Send form */
+    .send-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .send-form .full {
+      grid-column: 1 / -1;
+    }
+
+    .send-form label {
+      display: block;
+      font-size: .78rem;
+      color: var(--text2);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .send-form input,
+    .send-form textarea,
+    .send-form select {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: .875rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition);
+      resize: vertical;
+    }
+
+    .send-form input:focus,
+    .send-form textarea:focus {
+      border-color: var(--green);
+    }
+
+    .send-result {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: .85rem;
+      display: none;
+    }
+
+    .send-result.ok {
+      background: rgba(37, 211, 102, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(37, 211, 102, 0.2);
+    }
+
+    .send-result.err {
+      background: rgba(255, 71, 87, 0.1);
+      color: var(--red);
+      border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .sidebar {
+        display: none;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .status-grid,
+      .report-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .send-form {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .main {
+        padding: 16px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════════════ LOGIN SCREEN -->
+  <div id="login-screen">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="icon">💬</div>
+        <h2>WA Gateway</h2>
+        <p>Masuk untuk mengelola WhatsApp Gateway</p>
+      </div>
+      <p id="login-error"></p>
+      <div class="form-group">
+        <label>Email</label>
+        <input id="login-email" type="email" placeholder="admin@example.com" autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn" id="login-btn" onclick="doLogin()">Masuk</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════ APP -->
+  <div id="app" class="hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="s-icon">💬</div>
+        <span>WA Gateway</span>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active" onclick="showPage('status')">
+          <span class="nav-icon">📡</span> Status WA
+        </div>
+        <div class="nav-item" onclick="showPage('messages')">
+          <span class="nav-icon">💬</span> Histori Pesan
+        </div>
+        <div class="nav-item" onclick="showPage('send')">
+          <span class="nav-icon">📤</span> Kirim Pesan
+        </div>
+        <div class="nav-item" onclick="showPage('reports')">
+          <span class="nav-icon">📊</span> Laporan
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="user-avatar" id="user-avatar">AD</div>
+          <div class="user-info">
+            <div class="name" id="sidebar-name">Admin</div>
+            <div class="role" id="sidebar-role">ADMIN</div>
+          </div>
+          <button class="logout-btn" onclick="doLogout()" title="Keluar">⏏</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Stats (always visible) -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card" style="--accent:var(--green)">
+          <span class="s-icon">📨</span>
+          <div class="s-label">Total Pesan</div>
+          <div class="s-value" id="stat-total">–</div>
+          <div class="s-sub">semua waktu</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--blue)">
+          <span class="s-icon">✅</span>
+          <div class="s-label">Terkirim</div>
+          <div class="s-value" id="stat-sent">–</div>
+          <div class="s-sub">SENT + DELIVERED + READ</div>
+        </div>
+        <div class="stat-card" style="--accent:#c084fc">
+          <span class="s-icon">📥</span>
+          <div class="s-label">Masuk</div>
+          <div class="s-value" id="stat-in">–</div>
+          <div class="s-sub">pesan diterima</div>
+        </div>
+        <div class="stat-card" style="--accent:var(--red)">
+          <span class="s-icon">❌</span>
+          <div class="s-label">Gagal</div>
+          <div class="s-value" id="stat-failed">–</div>
+          <div class="s-sub">perlu perhatian</div>
+        </div>
+      </div>
+
+      <!-- ── Page: Status ── -->
+      <div class="page active" id="page-status">
+        <div class="page-header">
+          <h1>Status WhatsApp</h1>
+          <p>Monitor koneksi dan scan QR untuk menghubungkan WhatsApp</p>
+        </div>
+
+        <div class="status-grid">
+          <!-- WA Status Card -->
+          <div class="wa-status-card">
+            <div class="wa-status-badge disconnected" id="wa-badge">
+              <span class="dot"></span>
+              <span id="wa-badge-text">Memuat...</span>
+            </div>
+            <div class="wa-phone" id="wa-phone">–</div>
+            <div class="wa-phone-sub" id="wa-phone-sub">Nomor yang terhubung</div>
+            <br />
+            <button class="refresh-btn" onclick="fetchWaStatus()">🔄 Refresh Status</button>
+            <br />
+            <button class="refresh-btn" id="btn-ganti" onclick="gantiNomor()">🔄 Ganti Nomor WhatsApp</button>
+          </div>
+
+          <!-- QR Panel -->
+          <div class="qr-panel">
+            <h3>Scan QR Code</h3>
+            <p>Buka WhatsApp → Perangkat Tertaut → Tautkan Perangkat</p>
+            <div id="qr-placeholder">
+              <span class="qr-spin">⟳</span>
+              <span>Menunggu QR...</span>
+            </div>
+            <img id="qr-image" alt="QR Code" />
+            <div id="qr-connected">
+              <span class="check">✅</span>
+              <span style="font-size:.9rem;font-weight:600">WhatsApp Terhubung</span>
+            </div>
+            <br />
+            <button class="refresh-btn" onclick="fetchQR()">🔄 Minta QR Baru</button>
+          </div>
+        </div>
+
+        <!-- Event Log -->
+        <div class="log-panel">
+          <div class="log-header">
+            <h3>🔴 Live Events</h3>
+            <button class="clear-btn" onclick="clearLog()">Hapus Log</button>
+          </div>
+          <div id="event-log"></div>
+        </div>
+      </div>
+
+      <!-- ── Page: Messages ── -->
+      <div class="page" id="page-messages">
+        <div class="page-header">
+          <h1>History Pesan</h1>
+          <p>Semua pesan masuk dan keluar</p>
+        </div>
+
+        <div class="toolbar">
+          <select id="filter-direction" onchange="loadMessages(1)">
+            <option value="">Semua Arah</option>
+            <option value="IN">Masuk (IN)</option>
+            <option value="OUT">Keluar (OUT)</option>
+          </select>
+          <select id="filter-status" onchange="loadMessages(1)">
+            <option value="">Semua Status</option>
+            <option value="PENDING">Pending</option>
+            <option value="SENT">Sent</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="READ">Read</option>
+            <option value="FAILED">Failed</option>
+          </select>
+          <input type="text" id="filter-from" placeholder="Filter dari nomor..." oninput="debounceLoad()" />
+          <div class="spacer"></div>
+          <button class="btn-sm" onclick="loadMessages(1)">🔍 Filter</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Arah</th>
+                <th>Dari</th>
+                <th>Ke</th>
+                <th>Tipe</th>
+                <th>Isi Pesan</th>
+                <th>Status</th>
+                <th>Waktu</th>
+              </tr>
+            </thead>
+            <tbody id="msg-tbody">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <p>Belum ada pesan</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <span id="msg-info">–</span>
+            <div class="page-btns" id="msg-page-btns"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Page: Send ── -->
+      <div class="page" id="page-send">
+        <div class="page-header">
+          <h1>Kirim Pesan</h1>
+          <p>Kirim pesan teks atau media ke nomor WhatsApp</p>
+        </div>
+
+        <div class="card">
+          <div class="send-form">
+            <div>
+              <label>Nomor Tujuan *</label>
+              <input id="send-to" type="text" placeholder="628123456789" />
+            </div>
+            <div>
+              <label>Tipe</label>
+              <select id="send-type" onchange="toggleMediaField()">
+                <option value="text">Teks</option>
+                <option value="media">Media (Gambar/Dokumen)</option>
+              </select>
+            </div>
+            <div class="full" id="content-field">
+              <label>Isi Pesan *</label>
+              <textarea id="send-content" rows="4" placeholder="Ketik pesan disini..."></textarea>
+            </div>
+            <div class="full hidden" id="media-field" style="display:none">
+              <label>Upload File *</label>
+              <input id="send-file" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" />
+              <div style="margin-top:8px;">
+                <label>Caption (opsional)</label>
+                <input id="send-caption" type="text" placeholder="Caption untuk media..." />
+              </div>
+            </div>
+            <div class="full">
+              <div id="send-result" class="send-result"></div>
+            </div>
+            <div class="full" style="display:flex;justify-content:flex-end;gap:10px">
+              <button class="refresh-btn" onclick="resetSendForm()">Reset</button>
+              <button class="btn-sm" style="padding:10px 28px" onclick="doSendMessage()">📤 Kirim</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Page: Reports ── -->
+      <div class="page" id="page-reports">
+        <div class="page-header">
+          <h1>Laporan</h1>
+          <p>Statistik pengiriman pesan</p>
+        </div>
+
+        <div class="report-grid">
+          <div class="card">
+            <h3 style="margin-bottom:16px;font-size:.9rem;color:var(--text2)">STATUS PESAN</h3>
+            <table class="mini-table">
+              <tbody id="report-status-tbody"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:16px;font-size:.9rem;color:var(--text2)">TIPE PESAN</h3>
+            <table class="mini-table">
+              <tbody id="report-type-tbody"></tbody>
+            </table>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <h3 style="margin-bottom:16px;font-size:.9rem;color:var(--text2)">7 HARI TERAKHIR</h3>
+            <div id="daily-chart" style="display:flex;align-items:flex-end;gap:8px;height:120px;"></div>
+            <div id="daily-labels" style="display:flex;gap:8px;margin-top:6px;font-size:.7rem;color:var(--text2);">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Socket.io CDN fallback if not served by server -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ═══════════════════════════════════════════════════════════════════ STATE
+    let token = localStorage.getItem('wa_token') || null;
+    let apiKey = localStorage.getItem('wa_apikey') || null;
+    let userData = JSON.parse(localStorage.getItem('wa_user') || 'null');
+    let socket = null;
+    let msgPage = 1;
+    let debTimer = null;
+
+    const BASE = '';  // same origin
+
+    // ═══════════════════════════════════════════════════════════════════ BOOT
+    window.addEventListener('DOMContentLoaded', () => {
+      if (token && userData) {
+        showApp();
+      }
+      // enter on password field
+      document.getElementById('login-pass').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') doLogin();
+      });
+      document.getElementById('login-email').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('login-pass').focus();
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════════════════ AUTH
+    async function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      const btn = document.getElementById('login-btn');
+      const err = document.getElementById('login-error');
+
+      err.classList.remove('show');
+      if (!email || !pass) { showErr('Email dan password wajib diisi.'); return; }
+
+      btn.disabled = true; btn.textContent = 'Memproses...';
+      try {
+        const res = await fetch(`${BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass }),
+        });
+        const data = await res.json();
+        if (!data.success) { showErr(data.message); return; }
+
+        token = data.data.token;
+        apiKey = data.data.apiKey;
+
+        // Get user profile
+        const meRes = await fetch(`${BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        const me = await meRes.json();
+        userData = me.data;
+
+        localStorage.setItem('wa_token', token);
+        localStorage.setItem('wa_apikey', apiKey);
+        localStorage.setItem('wa_user', JSON.stringify(userData));
+
+        showApp();
+      } catch (e) {
+        showErr('Gagal koneksi ke server.');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Masuk';
+      }
+    }
+
+    function showErr(msg) {
+      const err = document.getElementById('login-error');
+      err.textContent = msg; err.classList.add('show');
+    }
+
+    function doLogout() {
+      token = apiKey = userData = null;
+      localStorage.removeItem('wa_token');
+      localStorage.removeItem('wa_apikey');
+      localStorage.removeItem('wa_user');
+      if (socket) { socket.disconnect(); socket = null; }
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('login-pass').value = '';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ SHOW APP
+    function showApp() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+
+      // Fill user info
+      if (userData) {
+        const initials = (userData.name || 'AD').slice(0, 2).toUpperCase();
+        document.getElementById('user-avatar').textContent = initials;
+        document.getElementById('sidebar-name').textContent = userData.name || 'User';
+        document.getElementById('sidebar-role').textContent = userData.role || 'USER';
+      }
+
+      initSocket();
+      fetchStats();
+      fetchWaStatus();
+      fetchQR();
+      loadMessages(1);
+      loadReports();
+
+      // Refresh stats every 30s
+      // setInterval(() => { fetchStats(); fetchWaStatus(); }, 30000);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ NAVIGATION
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`page-${name}`).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => {
+        if (n.textContent.trim().toLowerCase().includes(
+          { status: 'status', messages: 'histori', send: 'kirim', reports: 'laporan' }[name] || name
+        )) n.classList.add('active');
+      });
+
+      if (name === 'messages') loadMessages(msgPage);
+      if (name === 'reports') loadReports();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ SOCKET
+    function initSocket() {
+      if (socket) socket.disconnect();
+
+      socket = io(BASE, {
+        auth: { token: `Bearer ${token}` },
+        reconnectionAttempts: 5,
+      });
+
+      socket.on('connect', () => addLog('success', 'WS', 'Terhubung ke server'));
+      socket.on('disconnect', () => addLog('warn', 'WS', 'Terputus dari server'));
+      socket.on('connect_error', (e) => addLog('error', 'WS', 'Error: ' + e.message));
+
+      // Status WA awal saat connect
+      socket.on('wa:init', ({ status, qrDataUrl }) => {
+        setWABadge(
+          status === 'CONNECTED' ? 'connected' : status === 'QR_READY' ? 'qr' : 'disconnected',
+          status
+        );
+        if (status === 'QR_READY' && qrDataUrl) setQR(qrDataUrl);
+        else if (status === 'CONNECTED') showQRConnected();
+        else showQRWaiting();
+        addLog('info', 'WA', `Status awal: ${status}`);
+      });
+
+
+      socket.on('wa:qr', ({ qrDataUrl }) => {
+        addLog('warn', 'WA', 'QR Code baru tersedia — silakan scan');
+        setQR(qrDataUrl);
+        setWABadge('qr', 'QR_READY');
+      });
+
+      socket.on('wa:ready', ({ phone }) => {
+        addLog('success', 'WA', `Terhubung sebagai +${phone}`);
+        setWABadge('connected', 'CONNECTED');
+        document.getElementById('wa-phone').textContent = `+${phone}`;
+        showQRConnected();
+        fetchStats();
+      });
+
+      socket.on('wa:disconnected', ({ reason }) => {
+        addLog('error', 'WA', 'Terputus: ' + reason);
+        setWABadge('disconnected', 'DISCONNECTED');
+        showQRWaiting();
+      });
+
+      socket.on('wa:authenticated', () => addLog('info', 'WA', 'Sesi terautentikasi'));
+
+      socket.on('message:incoming', (msg) => {
+        addLog('info', 'MSG', `Pesan masuk dari ${msg.from}: ${(msg.content || '[media]').slice(0, 40)}`);
+        fetchStats();
+        if (document.getElementById('page-messages').classList.contains('active')) loadMessages(msgPage);
+      });
+
+      socket.on('message:status', ({ messageId, status }) => {
+        addLog('info', 'MSG', `Status update: ${messageId?.slice(0, 8)}… → ${status}`);
+        fetchStats();
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ STATS
+    async function fetchStats() {
+      try {
+        const res = await apiFetch('/reports/summary');
+        const data = res.data;
+        document.getElementById('stat-total').textContent = data.total ?? '–';
+        document.getElementById('stat-in').textContent = data.byDirection?.IN ?? 0;
+        const sent = (data.byStatus?.SENT || 0) + (data.byStatus?.DELIVERED || 0) + (data.byStatus?.READ || 0);
+        document.getElementById('stat-sent').textContent = sent;
+        document.getElementById('stat-failed').textContent = data.byStatus?.FAILED ?? 0;
+      } catch (_) { }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ WA STATUS
+    async function fetchWaStatus() {
+      try {
+        const res = await apiFetch('/auth/wa-status');
+        const { status, phone } = res.data;
+        setWABadge(
+          status === 'CONNECTED' ? 'connected' : status === 'QR_READY' ? 'qr' : 'disconnected',
+          status
+        );
+        if (phone) {
+          document.getElementById('wa-phone').textContent = `+${phone}`;
+        } else {
+          document.getElementById('wa-phone').textContent = '–';
+        }
+        if (status === 'CONNECTED') showQRConnected();
+        else if (status === 'QR_READY') fetchQR();
+        else showQRWaiting();
+      } catch (_) { }
+    }
+
+    async function fetchQR() {
+      try {
+        const res = await apiFetch('/auth/qr');
+        if (res.status === 'CONNECTED' || (res.data && res.data.status === 'CONNECTED')) {
+          showQRConnected(); return;
+        }
+        const qr = res.qrDataUrl || res.data?.qrDataUrl;
+        if (qr) setQR(qr);
+        else showQRWaiting();
+      } catch (_) { showQRWaiting(); }
+    }
+
+    function setWABadge(type, text) {
+      const badge = document.getElementById('wa-badge');
+      badge.className = `wa-status-badge ${type}`;
+      document.getElementById('wa-badge-text').textContent = text;
+    }
+
+    function setQR(dataUrl) {
+      document.getElementById('qr-placeholder').style.display = 'none';
+      document.getElementById('qr-connected').style.display = 'none';
+      const img = document.getElementById('qr-image');
+      img.src = dataUrl; img.style.display = 'block';
+    }
+    function showQRWaiting() {
+      document.getElementById('qr-image').style.display = 'none';
+      document.getElementById('qr-connected').style.display = 'none';
+      document.getElementById('qr-placeholder').style.display = 'flex';
+    }
+    function showQRConnected() {
+      document.getElementById('qr-image').style.display = 'none';
+      document.getElementById('qr-placeholder').style.display = 'none';
+      document.getElementById('qr-connected').style.display = 'flex';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ MESSAGES
+    async function loadMessages(page = 1) {
+      msgPage = page;
+      const dir = document.getElementById('filter-direction').value;
+      const status = document.getElementById('filter-status').value;
+      const from = document.getElementById('filter-from').value.trim();
+
+      const params = new URLSearchParams({ page, limit: 15 });
+      if (dir) params.set('direction', dir);
+      if (status) params.set('status', status);
+      if (from) params.set('from', from);
+
+      try {
+        const res = await apiFetch(`/messages?${params}`);
+        const msgs = res.data;
+        const pg = res.pagination;
+        renderMessages(msgs);
+        renderPagination(pg);
+      } catch (_) { }
+    }
+
+    function renderMessages(msgs) {
+      const tbody = document.getElementById('msg-tbody');
+      if (!msgs || msgs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">💬</div><p>Tidak ada pesan ditemukan</p></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = msgs.map(m => `
+    <tr>
+      <td><span class="dir-badge dir-${m.direction.toLowerCase()}">${m.direction}</span></td>
+      <td style="color:var(--text2);font-size:.8rem">${m.from || '–'}</td>
+      <td style="color:var(--text2);font-size:.8rem">${m.to || '–'}</td>
+      <td><span style="color:var(--text2);font-size:.78rem">${m.type}</span></td>
+      <td><div class="truncate" title="${escHtml(m.content || '')}">
+        ${m.content ? escHtml(m.content) : '<span style="color:var(--text2)">[media]</span>'}
+      </div></td>
+      <td>${statusBadge(m.status)}</td>
+      <td style="color:var(--text2);font-size:.78rem">${fmtDate(m.createdAt)}</td>
+    </tr>
+  `).join('');
+    }
+
+    function renderPagination(pg) {
+      document.getElementById('msg-info').textContent = `${pg.total} pesan — halaman ${pg.page}/${pg.totalPages || 1}`;
+      const btns = document.getElementById('msg-page-btns');
+      btns.innerHTML = `
+    <button class="page-btn" onclick="loadMessages(${pg.page - 1})" ${pg.page <= 1 ? 'disabled' : ''}>‹</button>
+    <button class="page-btn active">${pg.page}</button>
+    <button class="page-btn" onclick="loadMessages(${pg.page + 1})" ${pg.page >= pg.totalPages ? 'disabled' : ''}>›</button>
+  `;
+    }
+
+    function debounceLoad() {
+      clearTimeout(debTimer);
+      debTimer = setTimeout(() => loadMessages(1), 500);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ SEND
+    function toggleMediaField() {
+      const type = document.getElementById('send-type').value;
+      document.getElementById('content-field').style.display = type === 'text' ? '' : 'none';
+      document.getElementById('media-field').style.display = type === 'media' ? '' : 'none';
+    }
+
+    async function doSendMessage() {
+      const to = document.getElementById('send-to').value.trim();
+      const type = document.getElementById('send-type').value;
+      const res = document.getElementById('send-result');
+
+      if (!to) { showSendResult('error', 'Nomor tujuan wajib diisi.'); return; }
+
+      try {
+        let response;
+        if (type === 'text') {
+          const content = document.getElementById('send-content').value.trim();
+          if (!content) { showSendResult('error', 'Isi pesan wajib diisi.'); return; }
+          response = await apiFetch('/messages', 'POST', { to, content });
+        } else {
+          const file = document.getElementById('send-file').files[0];
+          if (!file) { showSendResult('error', 'Pilih file terlebih dahulu.'); return; }
+          const caption = document.getElementById('send-caption').value.trim();
+          const fd = new FormData();
+          fd.append('to', to); fd.append('media', file); fd.append('caption', caption);
+          const rawRes = await fetch('/messages', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: fd,
+          });
+          response = await rawRes.json();
+        }
+        if (response.success) {
+          showSendResult('ok', `✅ Pesan dikirim! ID: ${response.data?.messageId?.slice(0, 8)}…`);
+          fetchStats();
+        } else {
+          showSendResult('error', response.message);
+        }
+      } catch (e) {
+        showSendResult('error', 'Gagal mengirim: ' + e.message);
+      }
+    }
+
+    function showSendResult(type, msg) {
+      const el = document.getElementById('send-result');
+      el.className = `send-result ${type === 'ok' ? 'ok' : 'err'}`;
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    function resetSendForm() {
+      document.getElementById('send-to').value = '';
+      document.getElementById('send-content').value = '';
+      document.getElementById('send-caption').value = '';
+      document.getElementById('send-file').value = '';
+      document.getElementById('send-result').style.display = 'none';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ REPORTS
+    async function loadReports() {
+      try {
+        const [summary, daily] = await Promise.all([
+          apiFetch('/reports/summary'),
+          apiFetch('/reports/daily?days=7'),
+        ]);
+
+        // Status table
+        const statusOrder = ['SENT', 'DELIVERED', 'READ', 'PENDING', 'FAILED'];
+        const statusEmoji = { SENT: '📤', DELIVERED: '📬', READ: '👁️', PENDING: '⏳', FAILED: '❌', SENDING: '🔄', QUEUED: '📋' };
+        document.getElementById('report-status-tbody').innerHTML =
+          statusOrder.map(s => `
+        <tr>
+          <td>${statusEmoji[s] || '•'} ${s}</td>
+          <td style="color:var(--green)">${summary.data.byStatus[s] || 0}</td>
+        </tr>
+      `).join('');
+
+        // Type table
+        const types = summary.data.byType;
+        const typeEmoji = { TEXT: '💬', IMAGE: '🖼️', DOCUMENT: '📄', AUDIO: '🎵', VIDEO: '🎬', STICKER: '🎭' };
+        document.getElementById('report-type-tbody').innerHTML =
+          Object.entries(types).filter(([, v]) => v > 0).map(([k, v]) => `
+        <tr><td>${typeEmoji[k] || '•'} ${k}</td><td style="color:var(--blue)">${v}</td></tr>
+      `).join('') || '<tr><td colspan="2" style="color:var(--text2);text-align:center">Belum ada data</td></tr>';
+
+        // Daily bar chart
+        const days = daily.data;
+        const maxVal = Math.max(...days.map(d => d.total), 1);
+        document.getElementById('daily-chart').innerHTML = days.map(d => `
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div style="font-size:.7rem;color:var(--text2)">${d.total}</div>
+        <div style="width:100%;background:rgba(37,211,102,0.8);border-radius:4px 4px 0 0;
+          height:${Math.max((d.total / maxVal) * 100, 4)}px;transition:height .5s ease;
+          position:relative" title="${d.date}: ${d.total} pesan"></div>
+      </div>
+    `).join('');
+        document.getElementById('daily-labels').innerHTML = days.map(d => `
+      <div style="flex:1;text-align:center">${d.date.slice(5)}</div>
+    `).join('');
+      } catch (_) { }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════ LOG
+    function addLog(type, tag, msg) {
+      const log = document.getElementById('event-log');
+      const item = document.createElement('div');
+      item.className = `log-item ${type}`;
+      item.innerHTML = `
+    <span class="log-time">${new Date().toLocaleTimeString('id-ID')}</span>
+    <span class="log-type">[${tag}]</span>
+    <span>${escHtml(msg)}</span>
+  `;
+      log.prepend(item);
+      // Keep max 100 items
+      while (log.children.length > 100) log.lastChild.remove();
+    }
+    function clearLog() { document.getElementById('event-log').innerHTML = ''; }
+
+    // ═══════════════════════════════════════════════════════════════════ HELPERS
+    async function apiFetch(path, method = 'GET', body = null, extraHeaders = {}) {
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        ...extraHeaders,
+      };
+      if (body && method !== 'GET') headers['Content-Type'] = 'application/json';
+      const opts = { method, headers };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(BASE + path, opts);
+      const data = await res.json();
+      if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+      return data;
+    }
+
+    function statusBadge(status) {
+      const map = {
+        SENT: 'badge-sent', DELIVERED: 'badge-delivered', READ: 'badge-read',
+        PENDING: 'badge-pending', FAILED: 'badge-failed',
+        SENDING: 'badge-pending', QUEUED: 'badge-pending',
+      };
+      return `<span class="badge ${map[status] || 'badge-pending'}">${status}</span>`;
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '–';
+      const d = new Date(iso);
+      return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) +
+        ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function gantiNomor() {
+      // Tembak endpoint reset ke server
+
+      const res = await apiFetch('/auth/switch-number', 'POST');
+
+      console.log(res)
+
+    }
+  </script>
+</body>
+
+</html>

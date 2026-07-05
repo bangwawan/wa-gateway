@@ -1,0 +1,11 @@
+node_modules/
+.env
+logs/
+wa-session/
+uploads/
+*.log
+dist/
+.DS_Store
+.wwebjs_cache/
+
+

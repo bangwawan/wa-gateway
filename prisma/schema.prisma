@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// User – pemilik akun gateway (admin / tenant)
+// ============================================================
+model User {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  password    String    // bcrypt hash
+  role        Role      @default(USER)
+  apiKey      String    @unique @default(uuid())
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  messages    Message[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+// ============================================================
+// Message – log semua pesan masuk & keluar
+// ============================================================
+model Message {
+  id          String        @id @default(uuid())
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id])
+
+  direction   Direction     // IN | OUT
+  from        String        // nomor pengirim (E.164 format, misal: 628123456789)
+  to          String        // nomor penerima
+  type        MessageType   @default(TEXT)
+  content     String?       @db.Text
+  mediaUrl    String?       // path file di server
+  mediaType   String?       // image/jpeg, application/pdf, dsb.
+  status      MessageStatus @default(PENDING)
+  waMessageId String?       // ID dari WhatsApp
+  errorMsg    String?       @db.Text
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  queueJob    QueueJob?
+
+  @@index([direction])
+  @@index([status])
+  @@index([from])
+  @@index([to])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+enum Direction {
+  IN
+  OUT
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  AUDIO
+  VIDEO
+  STICKER
+}
+
+enum MessageStatus {
+  PENDING     // Baru masuk antrian
+  QUEUED      // Ada di queue, belum dikirim
+  SENDING     // Sedang dikirim
+  SENT        // Terkirim ke server WA
+  DELIVERED   // Terkirim ke penerima
+  READ        // Dibaca penerima
+  FAILED      // Gagal
+}
+
+// ============================================================
+// QueueJob – antrian pengiriman pesan
+// ============================================================
+model QueueJob {
+  id            String      @id @default(uuid())
+  messageId     String      @unique
+  message       Message     @relation(fields: [messageId], references: [id])
+
+  type          String      @default("SEND_MESSAGE")
+  payload       Json
+  status        JobStatus   @default(PENDING)
+  attempts      Int         @default(0)
+  maxAttempts   Int         @default(3)
+  lastError     String?     @db.Text
+  scheduledAt   DateTime    @default(now())
+  processedAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("queue_jobs")
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DEAD
+}
+
+// ============================================================
+// WhatsAppSession – menyimpan info sesi aktif
+// ============================================================
+model WhatsAppSession {
+  id          String    @id @default(uuid())
+  sessionId   String    @unique @default("default")
+  phone       String?   // nomor WA yang terhubung
+  status      WaStatus  @default(DISCONNECTED)
+  qrCode      String?   @db.Text
+  connectedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("whatsapp_sessions")
+}
+
+enum WaStatus {
+  DISCONNECTED
+  QR_READY
+  CONNECTED
+  RECONNECTING
+}
